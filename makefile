@@ -8,11 +8,12 @@
 # Edit FILE for change the C source file you want to use for build the UARM core
 # WARNING: it work with only 1 source code file
 
-FILE = helloworld
+FILE = p1test
+FILEPCB = pcb
 CFILE = $(FILE).c
+CFILEPCB = $(FILEPCB).c
 OFILE = $(FILE).o
-ELFFILE = $(FILE).elf
-
+OFILEPCB = $(FILEPCB).o
 
 # Compiling macros 
 # Complete command:  arm-none-eabi-gcc -mcpu=arm7tdmi -c -o p1test.o /usr/include/uarm/test/p1test.c
@@ -25,7 +26,7 @@ CO = -mcpu=arm7tdmi -c -o
 # complete command:  arm-none-eabi-ld -T /usr/include/uarm/ldscripts/elf32ltsarm.h.uarmcore.x -o p1test /usr/include/uarm/crtso.o /usr/include/uarm/libuarm.o p1test.o
 
 LD = arm-none-eabi-ld -T ../ldscripts/elf32ltsarm.h.uarmcore.x -o
-LFILE = ../crtso.o ../libuarm.o
+LFILE = ../crtso.o ../libuarm.o $(OFILEPCB)
 
 
 # Conversion macros
@@ -35,16 +36,20 @@ CONV = elf2uarm -k
 #Building the arm core 
 
 #Convert the .elf file into the core for uarm
-p1test : $(ELFFILE)
+p1test : $(FILE)
 	@echo "Converting to the UARM core file..."
-	$(CONV) $(ELFFILE)
+	$(CONV) $(FILE)
 
 
 #Linking the precompiled test file with the file necessary for build the .elf file
-$(ELFFILE) : $(LFILE) $(OFILE)
+$(FILE) : $(LFILE) $(OFILE)
 	@echo "Linkink necessary file with the obj file..."
 	$(LD) $(FILE) $(LFILE) $(OFILE)
 
+#Cross compiling from the C source file pcb.c into arm architeture
+$(OFILEPCB) : $(CFILEPCB)	
+	@echo "Compiling pcb into arm architeture"
+	$(CC) $(CO) $(OFILEPCB) $(CFILEPCB)
 
 #Cross compiling from the C source file into arm architeture
 $(OFILE) : $(CFILE)
@@ -53,4 +58,4 @@ $(OFILE) : $(CFILE)
 
 #Remove all created file
 clear :
-	rm $(FILE) $(CFILE) $(OFILE) $(ELFFILE)
+	rm  $(OFILE) $(FILE).stab.uarm $(FILE).core.uarm 

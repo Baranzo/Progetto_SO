@@ -4,7 +4,7 @@
 /* process control block type */
 typedef struct pcb_t {
 	/* process queue fields */
-	struct pcb_t *p_next, *p_prev, /* pointer to next entry */
+	struct pcb_t *p_next, /* pointer to next entry */
 							/* process tree fields */
 							*p_prnt, /* pointer to parent */
 							*p_child, /* pointer to 1st child */
@@ -19,7 +19,7 @@ typedef struct pcb_t {
 /* List view functions */
 
 EXTERN void freePcb(pcb_t *p);
-EXTERN pcb_t *allocPcb(void);
+/*EXTERN pcb_t *allocPcb(void);
 EXTERN void initPcbs(void);
 EXTERN pcb_t *mkEmptyProcQ(void);
 EXTERN int emptyProcQ(pcb_t *tp);
@@ -27,13 +27,13 @@ EXTERN void insertProcQ(pcb_t **tp, pcb_t *p);
 EXTERN pcb_t *removeProcQ(pcb_t **tp);
 EXTERN pcb_t *outProcQ(pcb_t **tp, pcb_t *p);
 EXTERN pcb_t *headProcQ(pcb_t *tp);
-
+*/
 /* Tree view functions */
-
+/*
 EXTERN void initASL(void);
 EXTERN int emptyChild(pcb_t *p);
 EXTERN void insertChild(pcb_t *prnt, pcb_t *p);
 EXTERN pcb_t *removeChild(pcb_t *p);
 EXTERN pcb_t *outChild(pcb_t *p);
-
+*/
 #endif
