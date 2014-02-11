@@ -110,11 +110,35 @@ pcb_t *headProcQ(pcb_t *tp){
 	}
 	return tp->p_next;
 }
-/* Tree view functions */
+//tree functions
+int emptyChild(pcb_t *p){
+	if (p->p_child == NULL) { 
+			return TRUE;
+	}
+	return FALSE;
+}
+
 /*
 void initASL(void);
-int emptyChild(pcb_t *p);
-void insertChild(pcb_t *prnt, pcb_t *p);
-pcb_t *removeChild(pcb_t *p);
-pcb_t *outChild(pcb_t *p);
+*/
+void insertChild(pcb_t *prnt, pcb_t *p){
+//non serve controllare che prnt->p_child != NULL perche' al piu' assegniamo a
+//p->p_sib il valore NULL
+	p->p_sib = prnt->p_child;
+    prnt->p_child = p;
+    p->p_prnt = prnt;
+}
+
+pcb_t *removeChild(pcb_t *p){
+	if(!emptyChild(p)){
+		pcb_t *temp;
+		temp=p->p_child;
+		p->p_child=temp->p_sib;
+		temp->p_prnt=NULL;
+		temp->p_sib=NULL;
+		return(temp);
+	}
+	return NULL;
+}
+/*pcb_t *outChild(pcb_t *p);
 */
