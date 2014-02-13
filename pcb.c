@@ -204,6 +204,7 @@ pcb_t *removeBlocked (int *semAdd){
 		semd_t *rem = tmp->s_next;
 		pcb_t *p;
 		
+		// ---->>> Non sono convinto sia corretto l'uso della funzione: a mente fresca ci riguardo, ma non datelo per funzionante
 		p = removeProcQ (rem->s_procQ);
 		
 		//and in case that semd list becomes empty, we can deallocate it
@@ -238,6 +239,8 @@ pcb_t *outBlocked (pcb_t *p){
 			search = search->p_next;
 	// if we can find p in the sema4 descriptor's process queue, we can remove it
 		if (search->p_next == p)
+		
+		// ---->>> Non sono convinto sia corretto l'uso della funzione: a mente fresca ci riguardo, ma non datelo per funzionante
 			return removeProcQ (search->p_next);
 			
 	// return NULL in either case we cannot find the right sema4 descriptor or p procBlk in the right sema4 descriptor list
