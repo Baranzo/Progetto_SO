@@ -220,8 +220,34 @@ pcb_t *removeBlocked (int *semAdd){
 	
 }
 
+
+pcb_t *outBlocked (pcb_t *p){
+	semd_t *tmp = semd_h;
+	
+	while (tmp != NULL && *(tmp->s_semAdd) != *(p->p_semAdd) )
+		tmp = tmp->s_next;
+	
+	if (tmp != NULL){
+		pcb_t *search = tmp->s_procQ;
+	
+		while ( search->p_next != p || search->p_next != tmp->s_procQ )
+			search = search->p_next;
+	
+		if (search->p_next == p){
+			search->p_next = p->p_next;
+			p->p_next = NULL;
+			return p;
+		}
+		return NULL;
+	}
+	return NULL;
+}
+
+
 /*
-pcb_t *outBlocked (pcb_t *p)
+GRANDE GIOVE!!!!!
+
+
 pcb_t *headBlocked (int *semAdd)
 void initASL(void);
 */
