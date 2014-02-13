@@ -42,17 +42,14 @@ pcb_t *allocPcb (){
 void initPcbs(void){
 	int i;
 	pcb_t *p;
+	p = pcbFree_h = &array[0];
+	
 	for (i = 0; i < MAXPROC; i++){
-		if (i==0){
-			pcbFree_h = &array[i];
-			p=pcbFree_h;
-		}
-		if (i < MAXPROC-1){
-			p->p_next = &array[i];
-		}else{
+		if (i < MAXPROC-1)
+			p->p_next = &array[i + 1];
+		else
 			p->p_next = NULL;
-		}
-		p=p->p_next;
+		p = p->p_next;
 	}
 }
 
@@ -118,13 +115,9 @@ int emptyChild(pcb_t *p){
 	return FALSE;
 }
 
-/*
-void initASL(void);
-*/
+
 void insertChild(pcb_t *prnt, pcb_t *p){
-//non serve controllare che prnt->p_child != NULL perche' al piu' assegniamo a
-//p->p_sib il valore NULL
-	p->p_sib = prnt->p_child;
+    p->p_sib = prnt->p_child;
     prnt->p_child = p;
     p->p_prnt = prnt;
 }
@@ -140,5 +133,58 @@ pcb_t *removeChild(pcb_t *p){
 	}
 	return NULL;
 }
-/*pcb_t *outChild(pcb_t *p);
+
+pcb_t *outChild(pcb_t *p);
+  if (p->p_prnt != NULL){
+    if ( (p->p_prnt)->p_child == p ) 
+    	return removeChild(p->p_prnt);
+    else {
+      pcb_t *tmp = (p->p_prnt)->p_child;
+      while (tmp->p_sib != p) 
+      	tmp = tmp->p_sib;
+      tmp->p_sib = p->p_sib;
+      p->p_prnt = NULL;
+      p->p_sib = NULL;
+      return p;
+    }
+  }
+    return 0;
+}
+
+
+/* Active Semaphore List */
+
+int insertBlocked (int *semAdd, pcb_t *p) {
+	semd_t *tmp = semd_h;
+
+	while( *((tmp->s_next)->s_semAdd) < *semAdd)
+		tmp = tmp->s_next;
+
+	if ( *((tmp->s_next)->s_semAdd) != *semAdd){
+		semd_t *app = semdFree_h;
+
+		if (semdFree_h == NULL) 
+			return TRUE;
+		else 
+			semdFree_h = semdFree_h->s_next;
+
+		app->s_next = tmp->s_next;
+		tmp->s_next = app;
+		app->s_semAdd = semAdd;
+		app->s_procQ = mkEmptyProcQ();
+	}
+	else{
+		tmp = tmp->s_next;
+		p->p_next = (tmp->s_procQ)->p_next;
+		(tmp->s_procQ)->p_next = p;
+		tmp->s_procQ = p;
+	}
+	return FALSE;
+}
+
+/*
+pcb_t *removeBlocked (int *semAdd)
+pcb_t *outBlocked (pcb_t *p)
+pcb_t *headBlocked (int *semAdd)
+void initASL(void);
 */
