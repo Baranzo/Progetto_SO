@@ -157,10 +157,10 @@ pcb_t *outChild(pcb_t *p);
 int insertBlocked (int *semAdd, pcb_t *p) {
 	semd_t *tmp = semd_h;
 
-	while( *((tmp->s_next)->s_semAdd) < *semAdd)
+	while( tmp->s_next != NULL && *((tmp->s_next)->s_semAdd) < *semAdd)
 		tmp = tmp->s_next;
 
-	if ( *((tmp->s_next)->s_semAdd) != *semAdd){
+	if ( tmp->s_next == NULL || *((tmp->s_next)->s_semAdd) != *semAdd ){
 		semd_t *app = semdFree_h;
 
 		if (semdFree_h == NULL) 
@@ -183,7 +183,10 @@ int insertBlocked (int *semAdd, pcb_t *p) {
 }
 
 /*
-pcb_t *removeBlocked (int *semAdd)
+pcb_t *removeBlocked (int *semAdd){
+
+
+
 pcb_t *outBlocked (pcb_t *p)
 pcb_t *headBlocked (int *semAdd)
 void initASL(void);
