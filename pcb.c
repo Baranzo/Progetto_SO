@@ -138,8 +138,10 @@ pcb_t *removeChild(pcb_t *p){
 
 pcb_t *outChild(pcb_t *p){
   if (p->p_prnt != NULL){
+  	// if procBlk p is the firs child, we can use removeChild function
     if ( (p->p_prnt)->p_child == p ) 
     	return removeChild(p->p_prnt);
+    	// otherwise we'll have to search it in the child list
     else {
       pcb_t *tmp = (p->p_prnt)->p_child;
       while (tmp->p_sib != p) 
@@ -150,7 +152,8 @@ pcb_t *outChild(pcb_t *p){
       return p;
     }
   }
-    return 0;
+  // if procBlk p has no parent, NULL is returned
+    return NULL;
 }
 
 
@@ -159,12 +162,15 @@ pcb_t *outChild(pcb_t *p){
 int insertBlocked (int *semAdd, pcb_t *p) {
 	semd_t *tmp = semd_h;
 
+	// search for the sema4 descriptor with the correct sema4 value
 	while( tmp->s_next != NULL && *((tmp->s_next)->s_semAdd) < *semAdd)
 		tmp = tmp->s_next;
 
+	// if we cannot find the corresponding we have to allocate a new block from the semdFree list
 	if ( tmp->s_next == NULL || *((tmp->s_next)->s_semAdd) != *semAdd ){
 		semd_t *app = semdFree_h;
-
+		
+		// but only if the semdFree list is not empty
 		if (semdFree_h == NULL) 
 			return TRUE;
 		else 
@@ -175,28 +181,32 @@ int insertBlocked (int *semAdd, pcb_t *p) {
 		app->s_semAdd = semAdd;
 		app->s_procQ = mkEmptyProcQ();
 	}
-	else{
-		tmp = tmp->s_next;
-		p->p_next = (tmp->s_procQ)->p_next;
-		(tmp->s_procQ)->p_next = p;
-		tmp->s_procQ = p;
-	}
+	
+	//if we found the correct sema4 descriptor, we can add procBlk p to that list upgrading its p_semAdd value
+	tmp = tmp->s_next;
+	p->p_next = (tmp->s_procQ)->p_next;
+	(tmp->s_procQ)->p_next = p;
+	tmp->s_procQ = p;
+	p->p_semAdd = semAdd;
+	
+	// return FALSE in any case exept in case semdFree list is empty and we need to allocate a new semd block
 	return FALSE;
 }
 
 
 pcb_t *removeBlocked (int *semAdd){
 	semd_t *tmp = semd_h;
-
+	//search for the sema4 descriptor with the correct sema4 value
 	while (tmp->s_next != NULL && *((tmp->s_next)->s_semAdd) != *semAdd)
 		tmp = tmp->s_next;
-
+	// if we can find the corresponding we can remove the head of the list 
 	if (tmp->s_next != NULL && *((tmp->s_next)->s_semAdd) == *semAdd){
 		semd_t *rem = tmp->s_next;
 		pcb_t *p;
 		
 		p = removeProcQ (rem->s_procQ);
 		
+		//and in case that semd list becomes empty, we can deallocate it
 		if ( emptyPrcQ (rem->s_procQ) ){
 			rem->s_procQ = NULL;
 			tmp->s_next = rem->s_next;
@@ -204,29 +214,33 @@ pcb_t *removeBlocked (int *semAdd){
 			semdFree_h->s_next = rem;
 		}
 		
+		// return the pointer to the procBlk we was able to remove from the list
 		return p;
 	}
 	else
+		// return NULL if we weren't able to find the right sema4 descriptor block
 		return NULL;
 	
 }
 
 
-pcb_t *outBlocked (pcb_t *p){
+pcb_t *outBlocked (pcb_t *p){ 
 	semd_t *tmp = semd_h;
-	
+	//search for the sema4 descriptor with the same sema4 value as p
 	while (tmp != NULL && *(tmp->s_semAdd) != *(p->p_semAdd) )
 		tmp = tmp->s_next;
 	
+	// if we found the corresponding sema4 descriptor we can search for p and remove it from the list
 	if (tmp != NULL){
 		pcb_t *search = tmp->s_procQ;
 	
 		while ( search->p_next != p || search->p_next != tmp->s_procQ )
 			search = search->p_next;
-	
+	// if we can find p in the sema4 descriptor's process queue, we can remove it
 		if (search->p_next == p)
 			return removeProcQ (search->p_next);
-		
+			
+	// return NULL in either case we cannot find the right sema4 descriptor or p procBlk in the right sema4 descriptor list
 		return NULL;
 	}
 	return NULL;
