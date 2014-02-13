@@ -57,5 +57,5 @@ $(OFILE) : $(CFILE)
 	$(CC) $(CO) $(OFILE) $(CFILE)
 
 #Remove all created file
-clear :
+cleanall :
 	rm  $(OFILE) $(FILE).stab.uarm $(FILE).core.uarm 
