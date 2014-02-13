@@ -59,12 +59,21 @@ pcb_t *mkEmptyProcQ(void){
 	return tp;
 }
 
+/*
 int emptyProcQ(pcb_t *tp){
 	if (tp == NULL){
 		return TRUE;
 	}
 	return FALSE;
 }
+*/
+
+int emptyProcQ (pcb_t *tp){
+	if (tp->p_next == NULL)
+		return TRUE
+	return FALSE;
+}
+
 
 void insertProcQ(pcb_t **tp, pcb_t *p){
 	p->p_next=(*tp)->p_next;
@@ -182,11 +191,36 @@ int insertBlocked (int *semAdd, pcb_t *p) {
 	return FALSE;
 }
 
-/*
+
 pcb_t *removeBlocked (int *semAdd){
+	semd_t *tmp = semd_h;
 
+	while (tmp->s_next != NULL && *((tmp->s_next)->s_semAdd) != *semAdd)
+		tmp = tmp->s_next;
 
+	if (tmp->s_next != NULL && *((tmp->s_next)->s_semAdd) == *semAdd){
+		semd_t *rem = tmp->s_next;
+		pcb_t *p = (rem->s_procQ)->p_next;
+		
+		(rem->s_procQ)->p_next = p->p_next
+		p->p_next = NULL;
 
+		// if ( (rem->s_procQ)->p_next == rem->s_procQ ){
+		if ( emptyPrcQ (rem->s_procQ) ){
+			rem->s_procQ = NULL;
+			tmp->s_next = rem->s_next;
+			rem->s_next = semdFree_h->s_next;
+			semdFree_h->s_next = rem;
+		}
+		
+		return p;
+	}
+	else
+		return NULL;
+	
+}
+
+/*
 pcb_t *outBlocked (pcb_t *p)
 pcb_t *headBlocked (int *semAdd)
 void initASL(void);
