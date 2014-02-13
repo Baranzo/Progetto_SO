@@ -59,18 +59,11 @@ pcb_t *mkEmptyProcQ(void){
 	return tp;
 }
 
-/*
+
 int emptyProcQ(pcb_t *tp){
 	if (tp == NULL){
 		return TRUE;
 	}
-	return FALSE;
-}
-*/
-
-int emptyProcQ (pcb_t *tp){
-	if (tp->p_next == NULL)
-		return TRUE
 	return FALSE;
 }
 
@@ -143,7 +136,7 @@ pcb_t *removeChild(pcb_t *p){
 	return NULL;
 }
 
-pcb_t *outChild(pcb_t *p);
+pcb_t *outChild(pcb_t *p){
   if (p->p_prnt != NULL){
     if ( (p->p_prnt)->p_child == p ) 
     	return removeChild(p->p_prnt);
@@ -200,12 +193,10 @@ pcb_t *removeBlocked (int *semAdd){
 
 	if (tmp->s_next != NULL && *((tmp->s_next)->s_semAdd) == *semAdd){
 		semd_t *rem = tmp->s_next;
-		pcb_t *p = (rem->s_procQ)->p_next;
+		pcb_t *p;
 		
-		(rem->s_procQ)->p_next = p->p_next
-		p->p_next = NULL;
-
-		// if ( (rem->s_procQ)->p_next == rem->s_procQ ){
+		p = removeProcQ (rem->s_procQ);
+		
 		if ( emptyPrcQ (rem->s_procQ) ){
 			rem->s_procQ = NULL;
 			tmp->s_next = rem->s_next;
@@ -233,11 +224,9 @@ pcb_t *outBlocked (pcb_t *p){
 		while ( search->p_next != p || search->p_next != tmp->s_procQ )
 			search = search->p_next;
 	
-		if (search->p_next == p){
-			search->p_next = p->p_next;
-			p->p_next = NULL;
-			return p;
-		}
+		if (search->p_next == p)
+			return removeProcQ (search->p_next);
+		
 		return NULL;
 	}
 	return NULL;
