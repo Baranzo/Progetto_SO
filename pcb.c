@@ -264,7 +264,7 @@ pcb_t *headBlocked (int *semAdd){
 	semd_t *tmp = semd_h;
 	
 	// search for the sema4 descriptor with the correct sema4 value
-	while (tmp != NULL && *(tmp->s_semAdd) != *(p->p_semAdd) )
+	while (tmp != NULL && *(tmp->s_semAdd) != *semAdd )
 		tmp = tmp->s_next;
 
 	// if we can find the right sema4 descriptor and it is not empty, it has a head. Let's find it!
