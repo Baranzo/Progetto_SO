@@ -3,11 +3,14 @@
 #include "libuarm.h"
 #include "types.h"
 #include "asl.h"
-//head pointer to pcb_free list
-pcb_t *pcbFree_h;
-static pcb_t array[MAXPROC]; //array dei procblk
 
-/* List view functions */
+pcb_t *pcbFree_h; //head pointer to pcb_free list
+semd_t *semdFree_h; // head pointer to semdFree list
+static pcb_t array[MAXPROC]; //procblks array
+static semd_t semdTable[MAXPROC + 1] // semaphore descriptors array
+				     //"+1" because of the dummy block
+
+/* List View Functions */
 
 void freePcb(pcb_t *p){
 	pcb_t *app;
@@ -31,8 +34,8 @@ pcb_t *allocPcb (){
 		p->p_prnt = NULL;
 		p->p_child = NULL;
 		p->p_sib = NULL;
-		//p->p_s = ??;
-		//p->p_semAdd = ??;
+		//p->p_s = NULL; Poi ci penseremo in fase 2 ad inizializzarlo
+		p->p_semAdd = NULL;
 		return p;
 	} 
 	//se la lista e' vuota ritorno NULL
@@ -52,6 +55,9 @@ void initPcbs(void){
 		p = p->p_next;
 	}
 }
+
+
+/* Process Queue Maintainance */
 
 pcb_t *mkEmptyProcQ(void){
 	pcb_t *tp;
@@ -109,7 +115,9 @@ pcb_t *headProcQ(pcb_t *tp){
 	}
 	return tp->p_next;
 }
-//tree functions
+
+/* Process Tree Maintainance */
+
 int emptyChild(pcb_t *p){
 	if (p->p_child == NULL) { 
 			return TRUE;
@@ -204,8 +212,9 @@ pcb_t *removeBlocked (int *semAdd){
 		semd_t *rem = tmp->s_next;
 		pcb_t *p;
 		
-		// ---->>> Non sono convinto sia corretto l'uso della funzione: a mente fresca ci riguardo, ma non datelo per funzionante
-		p = removeProcQ (rem->s_procQ);
+		// ---->>> Non sono convinto sia corretto l'uso della funzione: a mente fresca ci riguardo, 
+		// ma non datelo per funzionante
+		p = removeProcQ (&rem->s_procQ);
 		
 		//and in case that semd list becomes empty, we can deallocate it
 		if ( emptyPrcQ (rem->s_procQ) ){
@@ -240,8 +249,9 @@ pcb_t *outBlocked (pcb_t *p){
 	// if we can find p in the sema4 descriptor's process queue, we can remove it
 		if (search->p_next == p)
 		
-		// ---->>> Non sono convinto sia corretto l'uso della funzione: a mente fresca ci riguardo, ma non datelo per funzionante
-			return removeProcQ (search->p_next);
+		// ---->>> Non sono convinto sia corretto l'uso della funzione: a mente fresca ci riguardo, 
+		// ma non datelo per funzionante
+			return removeProcQ (&search->p_next);
 			
 	// return NULL in either case we cannot find the right sema4 descriptor or p procBlk in the right sema4 descriptor list
 		return NULL;
@@ -250,10 +260,53 @@ pcb_t *outBlocked (pcb_t *p){
 }
 
 
+pcb_t *headBlocked (int *semAdd){
+	semd_t *tmp = semd_h;
+	
+	// search for the sema4 descriptor with the correct sema4 value
+	while (tmp != NULL && *(tmp->s_semAdd) != *(p->p_semAdd) )
+		tmp = tmp->s_next;
+
+	// if we can find the right sema4 descriptor and it is not empty, it has a head. Let's find it!
+	if (tmp != NULL && tmp->s_procQ != NULL){
+		pcb_t *search = tmp->s_procQ;
+
+		while(search->p_next != tmp->s_procQ)
+			search = search->p_next;
+
+		return search;
+	}
+	// maybe there isn't a corresponding sema4 descriptor or maybe there is but it's empty
+	return NULL;
+}
+
+
+
+initASL(){
+	int i;
+	semd_t *p;
+
+	p = semdFree_h = &semdTable[0];
+	
+	// DUMMY Initialization
+	semdTable[0]->s_semAdd = NULL;
+	semdTable[0]->s_procQ = NULL
+
+	// adding semdTable blocks allocated in the semdFree list
+	for (i = 0; i < MAXPROC + 1; i++){
+		if (i < MAXPROC)
+			p->p_next = &semdTable[i + 1];
+		else	
+			p->p_next = NULL;
+		p = p->p_next;
+	}
+}
+
 /*
-GRANDE GIOVE!!!!!
+Generale dietro la collina,
+ci sta la notte buia ed assassina,
+e in mezzo al prato c'è una contadina,
+[Continua tu.... (e spero che qualcuno di sconosciuto stia seguendo il progetto e leggendo questi commenti :P) ]
 
-
-pcb_t *headBlocked (int *semAdd)
-void initASL(void);
+PS: si, a San Valentino sto facendo il progetto! Che vita triste...
 */
