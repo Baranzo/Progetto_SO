@@ -7,7 +7,7 @@
 pcb_t *pcbFree_h; //head pointer to pcb_free list
 semd_t *semdFree_h; // head pointer to semdFree list
 static pcb_t array[MAXPROC]; //procblks array
-static semd_t semdTable[MAXPROC + 1] // semaphore descriptors array
+static semd_t semdTable[MAXPROC + 1]; // semaphore descriptors array
 				     //"+1" because of the dummy block
 
 /* List View Functions */
