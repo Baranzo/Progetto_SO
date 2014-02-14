@@ -13,7 +13,19 @@ static semd_t semdTable[MAXPROC + 1]; // semaphore descriptors array
 /* List View Functions */
 
 void freePcb(pcb_t *p){
-	pcb_t *app;
+
+	 if (pcbFree_h != NULL){
+	    p->p_next = pcbFree_h;
+	    pcbFree_h = p;
+	  }
+	  else {
+	    p->p_next = NULL;
+	    pcbFree_h = p;
+	  }
+
+
+
+/*	pcb_t *app;
 	app=pcbFree_h;
 	//scorro fino a fine lista
 	while (app->p_next != NULL) {
@@ -22,14 +34,14 @@ void freePcb(pcb_t *p){
 	//aggiungo p in coda
 	app->p_next=p;
 	p->p_next=NULL;
-	
+*/	
 }
 pcb_t *allocPcb (){
 	//se la lista non e' vuota allora restituisco in pcb con i valori inizializzati
 	if (pcbFree_h != NULL){
 		pcb_t *p;
 		p=pcbFree_h;
-		pcbFree_h->p_next = p->p_next;
+		pcbFree_h = p->p_next;
 		p->p_next = NULL;
 		p->p_prnt = NULL;
 		p->p_child = NULL;
