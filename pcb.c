@@ -1,8 +1,10 @@
 //`#include "pcb.h"
 #include "const.h"
-#include "libuarm.h"
+#include "/usr/include/uarm/libuarm.h"
 #include "types.h"
 #include "asl.h"
+
+semd_t *semd_h;
 
 pcb_t *pcbFree_h; //head pointer to pcb_free list
 semd_t *semdFree_h; // head pointer to semdFree list
@@ -13,7 +15,7 @@ static semd_t semdTable[MAXPROC + 1]; // semaphore descriptors array
 /* List View Functions */
 
 void freePcb(pcb_t *p){
-
+	
 	 if (pcbFree_h != NULL){
 	    p->p_next = pcbFree_h;
 	    pcbFree_h = p;
@@ -22,25 +24,14 @@ void freePcb(pcb_t *p){
 	    p->p_next = NULL;
 	    pcbFree_h = p;
 	  }
-
-
-
-/*	pcb_t *app;
-	app=pcbFree_h;
-	//scorro fino a fine lista
-	while (app->p_next != NULL) {
-		app=app->p_next;
-	}
-	//aggiungo p in coda
-	app->p_next=p;
-	p->p_next=NULL;
-*/	
 }
+
+
 pcb_t *allocPcb (){
 	//se la lista non e' vuota allora restituisco in pcb con i valori inizializzati
 	if (pcbFree_h != NULL){
 		pcb_t *p;
-		p=pcbFree_h;
+		p = pcbFree_h;
 		pcbFree_h = p->p_next;
 		p->p_next = NULL;
 		p->p_prnt = NULL;
@@ -57,6 +48,7 @@ pcb_t *allocPcb (){
 void initPcbs(void){
 	int i;
 	pcb_t *p;
+	
 	p = pcbFree_h = &array[0];
 	
 	for (i = 0; i < MAXPROC; i++){
@@ -87,10 +79,11 @@ int emptyProcQ(pcb_t *tp){
 
 
 void insertProcQ(pcb_t **tp, pcb_t *p){
-	p->p_next=(*tp)->p_next;
-	(*tp)->p_next=p;
-	*tp=p;
+		p->p_next = (*tp)->p_next;
+		(*tp)->p_next = p;
+		*tp = p;
 }
+
 pcb_t *removeProcQ(pcb_t **tp){
 	pcb_t *p;
 	if (*tp == NULL){
@@ -104,25 +97,35 @@ pcb_t *removeProcQ(pcb_t **tp){
 	(*tp)->p_next = p->p_next;
 	return p;
 }
+
+// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 pcb_t *outProcQ(pcb_t **tp, pcb_t *p){
 	if( *tp ==NULL){
 		return NULL;
 	}
-	
+
 	pcb_t *tmp;
-	tmp=p;
-	while (tmp->p_next!=p){
+	tmp=*tp;
+		
+	while (tmp->p_next!=p || tmp->p_next != *tp){
 		tmp=tmp->p_next;
 	}
-	tmp->p_next=p->p_next;
-	if( p == *tp){
-		*tp=tmp;
+
+	if(tmp->p_next == p){
+		
+		tmp->p_next=p->p_next;
+		p->p_next = p;
+
+		if( p == *tp){
+			*tp=tmp;
+		}
+		return p;
 	}
-	return p;
+	return NULL;		
 }
 
 pcb_t *headProcQ(pcb_t *tp){
-	if (tp=NULL){
+	if (tp = NULL){
 		return NULL;
 	}
 	return tp->p_next;
@@ -217,19 +220,24 @@ int insertBlocked (int *semAdd, pcb_t *p) {
 pcb_t *removeBlocked (int *semAdd){
 	semd_t *tmp = semd_h;
 	//search for the sema4 descriptor with the correct sema4 value
-	while (tmp->s_next != NULL && *((tmp->s_next)->s_semAdd) != *semAdd)
+	while (tmp->s_next != NULL && (tmp->s_next)->s_semAdd != semAdd)
 		tmp = tmp->s_next;
+
 	// if we can find the corresponding we can remove the head of the list 
-	if (tmp->s_next != NULL && *((tmp->s_next)->s_semAdd) == *semAdd){
+	if (tmp->s_next != NULL && (tmp->s_next)->s_semAdd == semAdd){
 		semd_t *rem = tmp->s_next;
 		pcb_t *p;
 		
-		// ---->>> Non sono convinto sia corretto l'uso della funzione: a mente fresca ci riguardo, 
-		// ma non datelo per funzionante
-		p = removeProcQ (&rem->s_procQ);
 		
+		// p = removeProcQ (&(rem->s_procQ));
+		
+
+		p = (rem->s_procQ)->p_next;
+		rem->s_procQ->p_next = p->p_next;
+		p->p_next = p;
+	
 		//and in case that semd list becomes empty, we can deallocate it
-		if ( emptyPrcQ (rem->s_procQ) ){
+		if ( emptyProcQ (rem->s_procQ) ){
 			rem->s_procQ = NULL;
 			tmp->s_next = rem->s_next;
 			rem->s_next = semdFree_h->s_next;
@@ -301,24 +309,15 @@ initASL(){
 	p = semdFree_h = &semdTable[0];
 	
 	// DUMMY Initialization
-	semdTable[0]->s_semAdd = NULL;
-	semdTable[0]->s_procQ = NULL
+	semdFree_h->s_semAdd = NULL;
+	semdFree_h->s_procQ = NULL;
 
 	// adding semdTable blocks allocated in the semdFree list
 	for (i = 0; i < MAXPROC + 1; i++){
 		if (i < MAXPROC)
-			p->p_next = &semdTable[i + 1];
+			p->s_next = &semdTable[i + 1];
 		else	
-			p->p_next = NULL;
-		p = p->p_next;
+			p->s_next = NULL;
+		p = p->s_next;
 	}
 }
-
-/*
-Generale dietro la collina,
-ci sta la notte buia ed assassina,
-e in mezzo al prato c'è una contadina,
-[Continua tu.... (e spero che qualcuno di sconosciuto stia seguendo il progetto e leggendo questi commenti :P) ]
-
-PS: si, a San Valentino sto facendo il progetto! Che vita triste...
-*/
