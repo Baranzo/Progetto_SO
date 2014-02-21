@@ -4,6 +4,12 @@
 #include "types.h"
 #include "asl.h"
 
+typedef struct semd_t{
+	struct semd_t *s_next;
+	int *s_semAdd;
+	pcb_t *s_procQ;
+}semd_t;
+
 semd_t *semd_h;
 
 pcb_t *pcbFree_h; //head pointer to pcb_free list
