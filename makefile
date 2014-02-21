@@ -14,6 +14,7 @@ CFILE = $(FILE).c
 CFILEPCB = $(FILEPCB).c
 OFILE = $(FILE).o
 OFILEPCB = $(FILEPCB).o
+CORE = $(FILE).core.uarm
 
 # Compiling macros 
 # Complete command:  arm-none-eabi-gcc -mcpu=arm7tdmi -c -o p1test.o /usr/include/uarm/test/p1test.c
@@ -36,7 +37,7 @@ CONV = elf2uarm -k
 #Building the arm core 
 
 #Convert the .elf file into the core for uarm
-all : $(FILE)
+$(CORE): $(FILE)
 	@echo "Converting to the UARM core file..."
 	$(CONV) $(FILE)
 
