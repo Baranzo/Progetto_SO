@@ -36,7 +36,7 @@ CONV = elf2uarm -k
 #Building the arm core 
 
 #Convert the .elf file into the core for uarm
-p1test : $(FILE)
+all : $(FILE)
 	@echo "Converting to the UARM core file..."
 	$(CONV) $(FILE)
 
