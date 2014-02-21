@@ -79,9 +79,17 @@ int emptyProcQ(pcb_t *tp){
 
 
 void insertProcQ(pcb_t **tp, pcb_t *p){
-		p->p_next = (*tp)->p_next;
-		(*tp)->p_next = p;
-		*tp = p;
+		if ((*tp) == NULL)
+	{
+		(*tp)=p;
+		p->p_next=p;
+	}
+	else
+	{
+		p->p_next=(*tp)->p_next;
+		(*tp)->p_next=p;
+		(*tp)=p;
+	}
 }
 
 pcb_t *removeProcQ(pcb_t **tp){
@@ -100,32 +108,35 @@ pcb_t *removeProcQ(pcb_t **tp){
 
 // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 pcb_t *outProcQ(pcb_t **tp, pcb_t *p){
-	if( *tp ==NULL){
-		return NULL;
-	}
+pcb_t *tmp;
+	tmp=(*tp);
 
-	pcb_t *tmp;
-	tmp=*tp;
+	while(tmp->p_next!=(*tp)){
+	
+		if (tmp->p_next==p){
+			
+			tmp->p_next=p->p_next;
+			return p;
+		}else{
+			
+			tmp=tmp->p_next;
 		
-	while (tmp->p_next!=p || tmp->p_next != *tp){
-		tmp=tmp->p_next;
-	}
-
-	if(tmp->p_next == p){
-		
-		tmp->p_next=p->p_next;
-		p->p_next = p;
-
-		if( p == *tp){
-			*tp=tmp;
 		}
+		
+	}
+	
+	if(tmp->p_next==p){
+	
+		*tp=tmp;
+		tmp->p_next=p->p_next;
 		return p;
 	}
+	
 	return NULL;		
 }
 
 pcb_t *headProcQ(pcb_t *tp){
-	if (tp = NULL){
+	if (tp == NULL){
 		return NULL;
 	}
 	return tp->p_next;
