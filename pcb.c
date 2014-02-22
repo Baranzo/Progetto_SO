@@ -10,13 +10,15 @@ typedef struct semd_t{
 	pcb_t *s_procQ;
 }semd_t;
 
-semd_t *semd_h;
+semd_t *semd_h; //active sema4 list head pointer
 
 pcb_t *pcbFree_h; //head pointer to pcb_free list
+
 semd_t *semdFree_h; // head pointer to semdFree list
+
 static pcb_t array[MAXPROC]; //procblks array
-static semd_t semdTable[MAXPROC + 1]; // semaphore descriptors array
-				     //"+1" because of the dummy block
+
+static semd_t semdTable[MAXPROC + 1]; // semaphore descriptors array "+1" for the dummy block
 
 /* List View Functions */
 
@@ -200,12 +202,19 @@ pcb_t *outChild(pcb_t *p){
 /* Active Semaphore List */
 
 int insertBlocked (int *semAdd, pcb_t *p) {
-	semd_t *tmp = semd_h;
-
+	semd_t *tmp;
+	
+	tmp=semd_h;
+	
+	
 	// search for the sema4 descriptor with the correct sema4 value
 	while( tmp->s_next != NULL && *((tmp->s_next)->s_semAdd) < *semAdd)
+		{
+		
 		tmp = tmp->s_next;
-
+	}
+	
+	
 	// if we cannot find the corresponding we have to allocate a new block from the semdFree list
 	if ( tmp->s_next == NULL || *((tmp->s_next)->s_semAdd) != *semAdd ){
 		semd_t *app = semdFree_h;
@@ -237,24 +246,37 @@ int insertBlocked (int *semAdd, pcb_t *p) {
 pcb_t *removeBlocked (int *semAdd){
 	semd_t *tmp = semd_h;
 	//search for the sema4 descriptor with the correct sema4 value
-	while (tmp->s_next != NULL && (tmp->s_next)->s_semAdd != semAdd)
+	while (tmp->s_next != NULL && *((tmp->s_next)->s_semAdd) != *semAdd)
 		tmp = tmp->s_next;
+		
+		
 
 	// if we can find the corresponding we can remove the head of the list 
-	if (tmp->s_next != NULL && (tmp->s_next)->s_semAdd == semAdd){
+	if (tmp->s_next != NULL && *((tmp->s_next)->s_semAdd) == *semAdd){
 		semd_t *rem = tmp->s_next;
 		pcb_t *p;
 		
 		
-		// p = removeProcQ (&(rem->s_procQ));
+		if((rem->s_procQ)->p_next == (rem->s_procQ)->p_next)
+		{
+			p = rem->s_procQ;
+			rem->s_procQ = NULL;
+		}
 		
-
+		else
+			p = removeProcQ (&(rem->s_procQ));
+		
+		/*
 		p = (rem->s_procQ)->p_next;
 		rem->s_procQ->p_next = p->p_next;
 		p->p_next = p;
-	
+		*/
+		
 		//and in case that semd list becomes empty, we can deallocate it
 		if ( emptyProcQ (rem->s_procQ) ){
+			
+			
+			
 			rem->s_procQ = NULL;
 			tmp->s_next = rem->s_next;
 			rem->s_next = semdFree_h->s_next;
@@ -323,12 +345,14 @@ initASL(){
 	int i;
 	semd_t *p;
 
-	p = semdFree_h = &semdTable[0];
+	p = semdFree_h = &semdTable[1];
 	
 	// DUMMY Initialization
-	semdFree_h->s_semAdd = NULL;
-	semdFree_h->s_procQ = NULL;
-
+	semd_h->s_semAdd = NULL;
+	semd_h->s_procQ = NULL;
+	semd_h->s_next = NULL;
+	
+	
 	// adding semdTable blocks allocated in the semdFree list
 	for (i = 0; i < MAXPROC + 1; i++){
 		if (i < MAXPROC)
