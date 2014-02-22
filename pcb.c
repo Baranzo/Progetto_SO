@@ -208,7 +208,7 @@ int insertBlocked (int *semAdd, pcb_t *p) {
 	
 	
 	// search for the sema4 descriptor with the correct sema4 value
-	while( tmp->s_next != NULL && *((tmp->s_next)->s_semAdd) < *semAdd)
+	while( tmp->s_next != NULL && ((tmp->s_next)->s_semAdd) < semAdd)
 		{
 		
 		tmp = tmp->s_next;
@@ -216,7 +216,7 @@ int insertBlocked (int *semAdd, pcb_t *p) {
 	
 	
 	// if we cannot find the corresponding we have to allocate a new block from the semdFree list
-	if ( tmp->s_next == NULL || *((tmp->s_next)->s_semAdd) != *semAdd ){
+	if ( tmp->s_next == NULL || ((tmp->s_next)->s_semAdd) != semAdd ){
 		semd_t *app = semdFree_h;
 		
 		// but only if the semdFree list is not empty
@@ -246,7 +246,7 @@ int insertBlocked (int *semAdd, pcb_t *p) {
 pcb_t *removeBlocked (int *semAdd){
 	semd_t *tmp = semd_h;
 	//search for the sema4 descriptor with the correct sema4 value
-	while (tmp->s_next != NULL && *((tmp->s_next)->s_semAdd) != *semAdd)
+	while (tmp->s_next != NULL && ((tmp->s_next)->s_semAdd) != semAdd)
 		tmp = tmp->s_next;
 		
 		
