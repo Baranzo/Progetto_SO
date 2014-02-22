@@ -257,7 +257,7 @@ pcb_t *removeBlocked (int *semAdd){
 		pcb_t *p;
 		
 		
-		if((rem->s_procQ)->p_next == (rem->s_procQ)->p_next)
+		if((rem->s_procQ)->p_next == rem->s_procQ)
 		{
 			p = rem->s_procQ;
 			rem->s_procQ = NULL;
