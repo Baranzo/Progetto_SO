@@ -114,7 +114,7 @@ pcb_t *removeProcQ(pcb_t **tp){
 	return p;
 }
 
-// <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
 pcb_t *outProcQ(pcb_t **tp, pcb_t *p){
 pcb_t *tmp;
 	tmp=(*tp);
@@ -200,7 +200,7 @@ pcb_t *outChild(pcb_t *p){
 
 
 /* Active Semaphore List */
-
+/*
 int insertBlocked (int *semAdd, pcb_t *p) {
 	semd_t *tmp;
 	
@@ -208,7 +208,7 @@ int insertBlocked (int *semAdd, pcb_t *p) {
 	
 	
 	// search for the sema4 descriptor with the correct sema4 value
-	while( tmp->s_next != NULL && ((tmp->s_next)->s_semAdd) < semAdd)
+	while( tmp->s_next != NULL && ((tmp->s_next)->s_semAdd) != semAdd)
 		{
 		
 		tmp = tmp->s_next;
@@ -241,24 +241,111 @@ int insertBlocked (int *semAdd, pcb_t *p) {
 	// return FALSE in any case exept in case semdFree list is empty and we need to allocate a new semd block
 	return FALSE;
 }
+*/
 
+/*int insertBlocked (int *semAdd, pcb_t *p)
+{
+	semd_t *prec;
+	prec = semd_h;
+	
+	while(prec->s_next != NULL && (prec->s_next)->s_semAdd != semAdd)
+		prec=prec->s_next;
+		
+	if((prec->s_next)->s_semAdd == semAdd)
+	{
+		pcb_t *tp;
+		
+		tp=(prec->s_next)->s_procQ;
+		p->p_next=tp;
+		tp=p;
+		return FALSE;
+	}
+	else
+	{	
+		if(semdFree_h==NULL) return TRUE;
+		semd_t *new;
+		pcb_t *tp;
+		new=semdFree_h;
+		semdFree_h=semdFree_h->s_next;
+		new->s_next=prec->s_next;
+		prec->s_next=new;
+		new->s_semAdd=semAdd;
+		
+		insertProcQ(&tp,p);
+		new->s_procQ=tp;
+		p->p_semAdd=semAdd;
+		
+		return FALSE;
+	}
+}
+ */
+ int insertBlocked(int *semAdd, pcb_t *p)
+	{
+	semd_t *semdTmp, *semdList = semd_h;
+	
 
+	while((semdList->s_next)->s_semAdd != semAdd && semdList->s_next != NULL)
+		semdList = semdList->s_next;
+
+	semdTmp=semdList;
+	semdList=semd_h;
+	// If the semaphore is found, insert the process block to its queue
+	if(semdTmp->s_next != NULL){
+			insertProcQ(&((semdTmp->s_next)->s_procQ), p);
+			p->p_semAdd = semAdd;
+			return FALSE;
+		}
+
+	// Otherwise, if the semdFree is not empty, create a new semaphore descriptor
+	// and insert the process block to its queue
+	else
+		{
+			if(semdFree_h == NULL)
+				return TRUE;
+
+			semdTmp = semdFree_h;
+			semdFree_h = semdFree_h->s_next;
+
+			while((semdList->s_next) != NULL)
+				{
+					if(semAdd < (semdList->s_next)->s_semAdd)
+						break;
+					semdList = semdList->s_next;
+
+				}
+
+			semdTmp->s_semAdd = semAdd;
+			semdTmp->s_next = semdList->s_next;
+			semdList->s_next = semdTmp;
+
+			semdTmp->s_procQ = mkEmptyProcQ();
+			insertProcQ(&(semdTmp->s_procQ), p);
+			p->p_semAdd = semAdd;
+
+			return FALSE;
+			}
+}
+/*
 pcb_t *removeBlocked (int *semAdd){
 	semd_t *tmp = semd_h;
 	//search for the sema4 descriptor with the correct sema4 value
 	while (tmp->s_next != NULL && ((tmp->s_next)->s_semAdd) != semAdd)
 		tmp = tmp->s_next;
-		
+		 
 		
 
 	// if we can find the corresponding we can remove the head of the list 
-	if (tmp->s_next != NULL && *((tmp->s_next)->s_semAdd) == *semAdd){
+	if (tmp->s_next != NULL && (tmp->s_next)->s_semAdd == semAdd){
+		
+		//tprint("hello!");
+		
 		semd_t *rem = tmp->s_next;
 		pcb_t *p;
 		
 		
 		if((rem->s_procQ)->p_next == rem->s_procQ)
 		{
+			tprint("hello!");
 			p = rem->s_procQ;
 			rem->s_procQ = NULL;
 		}
@@ -276,13 +363,10 @@ pcb_t *removeBlocked (int *semAdd){
 		p = (rem->s_procQ)->p_next;
 		rem->s_procQ->p_next = p->p_next;
 		p->p_next = p;
-		*/
+		
 		
 		//and in case that semd list becomes empty, we can deallocate it
 		if ( emptyProcQ (rem->s_procQ) ){
-			
-			
-			
 			rem->s_procQ = NULL;
 			tmp->s_next = rem->s_next;
 			rem->s_next = semdFree_h->s_next;
@@ -297,8 +381,49 @@ pcb_t *removeBlocked (int *semAdd){
 		return NULL;
 	
 }
+*/
 
-
+pcb_t *removeBlocked (int *semAdd)
+{
+	semd_t *prec;
+	prec = semd_h;
+	
+	while(prec->s_next != NULL && (prec->s_next)->s_semAdd != semAdd)
+	{
+		prec=prec->s_next;
+	}
+	
+	if(prec->s_next == NULL)
+		return NULL;
+	if((prec->s_next)->s_semAdd==semAdd){
+		tprint("trovato\n");
+		pcb_t *ris , *tp;
+		semd_t *tmp;
+		tp=(prec->s_next)->s_procQ;
+		
+		ris=removeProcQ(&tp);
+		if(!emptyProcQ(tp)) 
+			{
+				tprint("not empty\n");
+				return ris;
+			}
+		else
+		{	
+			tprint("empty\n");
+			tmp=prec->s_next;
+			prec->s_next=tmp->s_next;
+			tmp->s_next=semdFree_h;
+			semdFree_h=tmp;
+			
+			
+		
+			
+			return ris;
+		}
+	}
+	return NULL;
+}	
+		
 pcb_t *outBlocked (pcb_t *p){ 
 	semd_t *tmp = semd_h;
 	//search for the sema4 descriptor with the same sema4 value as p
@@ -354,6 +479,7 @@ initASL(){
 	p = semdFree_h = &semdTable[1];
 	
 	// DUMMY Initialization
+	semd_h=&semdTable[0];
 	semd_h->s_semAdd = NULL;
 	semd_h->s_procQ = NULL;
 	semd_h->s_next = NULL;
