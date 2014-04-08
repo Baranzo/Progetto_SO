@@ -143,19 +143,19 @@ pcb_t *outProcQ(pcb_t **tp, pcb_t *p){
 	
 	
 	if (*tp == p){
+		/* If there is only one element in the list */
+		if (tmp->p_next == p) {		
+			*tp = NULL;
+			p->p_next = NULL;		
+			return p;
+		}
+		
 		(*tp) = (*tp)->p_next;
 		tmp->p_next = p->p_next;
 		p->p_next = NULL;
 		
 		return p;
-	}
-	
-	/* If there is only one element in the list */
-	if (tmp->p_next == p) {		
-		*tp = NULL;
-		p->p_next = NULL;		
-		return p;
-	}
+		}
 	
 	return NULL;	
 }
