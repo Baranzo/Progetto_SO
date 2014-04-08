@@ -79,19 +79,28 @@ pcb_t *removeBlocked (int *semAdd){
 /* Remove the procBlc pointed by p */
 pcb_t *outBlocked (pcb_t *p){
   semd_t *tmp = semd_h->s_next;
+	semd_t *prec = semd_h;
 
   /* Search for the semaphore descriptor equals to semaaphore value of p */
   while ((tmp->s_semAdd) != (p->p_semAdd) && tmp != NULL){
-    tmp = tmp->s_next;
+	prec = tmp;    
+	tmp = tmp->s_next;
   }
-  
+ 
   /* Remove the pcb if we find it */
   if (tmp != NULL){
     pcb_t *tp;
     tp = outProcQ(&(tmp->s_procQ), p);
+	if (emptyProcQ(tmp->s_procQ)) {
+		prec->s_next = tmp->s_next;
+		tmp->s_next= semdFree_h->s_next;
+		semdFree_h->s_next = tmp;
+	}
     return tp;	
   }
   
+  /* */
+
   return NULL;
 }
 
