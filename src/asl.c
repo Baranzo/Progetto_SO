@@ -1,4 +1,3 @@
-
 #include "asl.h"
 
 semd_t *semdFree_h; // head pointer to semdFree list
@@ -121,6 +120,7 @@ initASL(){
   int i;
   semd_t *p;
   p = semdFree_h = &semdTable[1];
+  semd_h =&semdTable[0];
   
   /* DUMMY Initialization */
   semd_h->s_semAdd = NULL;
@@ -128,7 +128,7 @@ initASL(){
   semd_h->s_next = NULL;
 
   /* adding semdTable blocks allocated in the semdFree list */
-  for (i = 0; i < MAXPROC + 1; i++){
+  for (i = 1; i < MAXPROC + 1; i++){
     if (i < MAXPROC){
       p->s_next = &semdTable[i + 1];
     }
