@@ -1,4 +1,3 @@
-
 #include "libuarm.h"
 #include "types.h"
 #include "pcb.h"
@@ -140,6 +139,15 @@ pcb_t *outProcQ(pcb_t **tp, pcb_t *p){
 			tmp = tmp->p_next;			
 			}
 			
+	}
+	
+	
+	if (*tp == p){
+		*tp = *tp->p_next;
+		tmp->p_next = p->p_next;
+		p->p_next = NULL;
+		
+		return p;
 	}
 	
 	/* If there is only one element in the list */
