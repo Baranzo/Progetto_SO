@@ -143,7 +143,7 @@ pcb_t *outProcQ(pcb_t **tp, pcb_t *p){
 	
 	
 	if (*tp == p){
-		*tp = *tp->p_next;
+		(*tp) = (*tp)->p_next;
 		tmp->p_next = p->p_next;
 		p->p_next = NULL;
 		
