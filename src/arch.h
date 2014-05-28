@@ -2,6 +2,7 @@
  * uMPS - A general purpose computer system simulator
  *
  * Copyright (C) 2010, 2011 Tomislav Jonjic
+ * Copyright (C) 2014 Marco Melletti
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -31,17 +32,18 @@
 /*
  * Generalities
  */
-#define WORD_SIZE (sizeof(Word))
+#define WORD_SIZE 4
 #define WS        WORD_SIZE
 
 #define MMIO_BASE 0x00000040
 #define RAM_BASE  0x00008000
 
+#define RAM_TOP ((*((U32 *)BUS_REG_RAM_BASE)) + (*((U32 *)BUS_REG_RAM_SIZE)))
+
 /* Segment-related constants */
 #define KSEGOS_BASE        0x00000000
-#define KSEGOS_BIOS_BASE   0x00000000
-#define KSEGOS_BOOT_BASE   0x1FC00000
-#define KUSEG2_BASE        0x80000000
+#define KSEGOS_BIOS_BASE   0x00000300
+#define KUSEG2_BASE        0x00008000
 
 /* Device register size */
 #define DEV_REG_SIZE_W   4
@@ -83,27 +85,31 @@
  * any alternative.
  */
 
-/* Bus register space */
-#define BUS_REG_RAM_BASE        0x10000000
-#define BUS_REG_RAM_SIZE        0x10000004
-#define BUS_REG_BIOS_BASE       0x10000008
-#define BUS_REG_BIOS_SIZE       0x1000000C
-#define BUS_REG_BOOT_BASE       0x10000010
-#define BUS_REG_BOOT_SIZE       0x10000014
+/* Bus register area. Among other informations, the start and amount of
+   installed RAM are stored here */
+#define BUS_REG_RAM_BASE        0x000002D0
+#define BUS_REG_RAM_SIZE        0x000002D4
+#define BUS_REG_DEV_BASE        0x000002D8
+
+/* Elapsed clock ticks (CPU instructions executed) since system power on.
+   Only the "low" part is actually used. */
 #define BUS_REG_TOD_HI          0x000002DC
 #define BUS_REG_TOD_LO          0x000002E0
+
+/* How many clock ticks per microsecond (read 1) */
 #define BUS_REG_TIMER           0x000002E4
-#define BUS_REG_TIME_SCALE      0x10000024
+#define BUS_REG_TIME_SCALE      0x000002E8
 
-/* Installed devices bitmap */
-#define IDEV_BITMAP_BASE        0x10000028
-#define IDEV_BITMAP_END         (IDEV_BITMAP_BASE + N_EXT_IL * WS)
-#define IDEV_BITMAP_ADDR(line)  (IDEV_BITMAP_BASE + ((line) - DEV_IL_START) * WS)
-
-/* Interrupting devices bitmap */
-#define CDEV_BITMAP_BASE        0x1000003C
+/* Interrupting devices bitmaps starting address: the actual bitmap address is
+   computed with PENDING_BITMAP_START + (WORD_SIZE * (int_no - 3)) */
+#define CDEV_BITMAP_BASE        0x00006FE0
 #define CDEV_BITMAP_END         (CDEV_BITMAP_BASE + N_EXT_IL * WS)
 #define CDEV_BITMAP_ADDR(line)  (CDEV_BITMAP_BASE + ((line) - DEV_IL_START) * WS)
+
+/* Installed devices bitmap starting address: same as above */
+#define IDEV_BITMAP_BASE        0x00000020
+#define IDEV_BITMAP_END         (IDEV_BITMAP_BASE + N_EXT_IL * WS)
+#define IDEV_BITMAP_ADDR(line)  (IDEV_BITMAP_BASE + ((line) - DEV_IL_START) * WS)
 
 /* Device register area */
 #define DEV_REG_START           0x00000040
@@ -112,80 +118,9 @@
 /* End of memory mapped external device registers area */
 #define DEV_REG_END             (DEV_REG_START + N_EXT_IL * N_DEV_PER_IL * DEV_REG_SIZE)
 
-/*
- * Interrupt Routing Table (IRT)
- */
-#define IRT_BASE                0x10000300
-#define IRT_END                 0x100003c0  /* (IRT_BASE + (N_EXT_IL + 1) * N_DEV_PER_IL * WS) */
+//MISSING: last part has been removed (Interrupt Routing Table and Multiprocessor support)
 
-#define IRT_ENTRY(line, dev)    (IRT_BASE + WS * (((line) - IL_TIMER) * N_DEV_PER_IL + dev))
-
-#define     IRT_ENTRY_POLICY_MASK       0x10000000
-#define     IRT_ENTRY_POLICY_BIT        28
-#define     IRT_ENTRY_GET_POLICY(x)     (((x) & IRT_ENTRY_POLICY_MASK) >> IRT_ENTRY_POLICY_BIT)
-
-#define     IRT_ENTRY_DEST_MASK         0x0000ffff
-#define     IRT_ENTRY_DEST_BIT          0
-#define     IRT_ENTRY_GET_DEST(x)       (((x) & IRT_ENTRY_DEST_MASK) >> IRT_ENTRY_DEST_BIT)
-
-/* Interrupt routing policies */
+#define CPUCTL_TPR_PRIORITY_MASK    0x0000000f
 #define IRT_POLICY_FIXED   0
-#define IRT_POLICY_DYNAMIC 1
-
-/*
- * Int. controller cpu inteface (banked) register set
- */
-#define CPUCTL_INBOX            0x10000400
-
-#define     CPUCTL_INBOX_MSG_MASK       0x000000ff
-#define     CPUCTL_INBOX_MSG_BIT        0
-#define     CPUCTL_INBOX_GET_MSG(x)     (((x) & CPUCTL_INBOX_MSG_MASK) >> CPUCTL_INBOX_MSG_BIT)
-
-#define     CPUCTL_INBOX_ORIGIN_MASK    0x00000f00
-#define     CPUCTL_INBOX_ORIGIN_BIT     8
-#define     CPUCTL_INBOX_GET_ORIGIN(x)  (((x) & CPUCTL_INBOX_ORIGIN_MASK) >> CPUCTL_INBOX_ORIGIN_BIT)
-
-#define CPUCTL_OUTBOX           0x10000404
-
-#define     CPUCTL_OUTBOX_MSG_MASK      0x000000ff
-#define     CPUCTL_OUTBOX_MSG_BIT       0
-#define     CPUCTL_OUTBOX_GET_MSG(x)    (((x) & CPUCTL_OUTBOX_MSG_MASK) >> CPUCTL_OUTBOX_MSG_BIT)
-
-#define     CPUCTL_OUTBOX_RECIP_MASK    0x00ffff00
-#define     CPUCTL_OUTBOX_RECIP_BIT     8
-#define     CPUCTL_OUTBOX_GET_RECIP(x)  (((x) & CPUCTL_OUTBOX_RECIP_MASK) >> CPUCTL_OUTBOX_RECIP_BIT)
-
-#define CPUCTL_TPR              0x10000408
-
-#define     CPUCTL_TPR_PRIORITY_MASK    0x0000000f
-
-#define CPUCTL_BIOS_RES_0       0x1000040c
-#define CPUCTL_BIOS_RES_1       0x10000410
-
-#define CPUCTL_BASE             CPUCTL_INBOX
-#define CPUCTL_END              (CPUCTL_BIOS_RES_1 + WS)
-
-/*
- * Machine control registers
- */
-#define MCTL_NCPUS              0x10000500
-
-#define MCTL_RESET_CPU          0x10000504
-#define     MCTL_RESET_CPU_CPUID_MASK   0x0000000f
-
-/* Reset vector and initial $sp */
-#define MCTL_BOOT_PC            0x10000508
-#define MCTL_BOOT_SP            0x1000050c
-
-#define MCTL_DEFAULT_BOOT_PC    0x1fc00000
-#define MCTL_DEFAULT_BOOT_SP    0x00000000
-
-#define MCTL_HALT_CPU           0x10000510
-#define MCTL_POWER              0x10000514
-
-#define MCTL_BASE               MCTL_NCPUS
-#define MCTL_END                (MCTL_POWER + WS)
-
-#define MMIO_END                0x2C4
 
 #endif //UARM_ARCH_H

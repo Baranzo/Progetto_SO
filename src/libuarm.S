@@ -1,3 +1,25 @@
+/*
+ * uARM
+ *
+ * Copyright (C) 2014 Marco Melletti
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
+.include "bios_const.h"
+
 .equ TERMCOMMAND,	0xC
 .equ TERMSTATUS,	8
 .equ SENDCHAR,		2
@@ -8,6 +30,7 @@
 .equ DEVREGSIZE,	0x10
 .equ DEVS_PER_IL,	8
 .equ DEV_TERM_OFF,	4
+.equ STATE_T_REGISTERS,	16
 
 /* prints a 0-terminated string on terminal 0 *
  * void tprint(const char *s)                 */
@@ -50,41 +73,135 @@ tprint_exit:
     pop {r5, r6, r7}
     BX lr
 
+/* void SYSCALL(unsigned int sysNum, unsigned int arg1, unsigned int arg2, unsigned int arg3) */
+.global SYSCALL
+SYSCALL:
+    SWI BIOS_SRV_SYS
+    BX lr
+
+.global BREAK
+BREAK:
+    SWI BIOS_SRV_BP
+    BX lr
+
 /* HALT and PANIC functions */
-
 .global HALT
-
 HALT:
-HALT_start:
-    MOV r1, pc
-    SUB r1, r1, #8  /* r0 = HALT */
-    SUB r1, r1, #HALT_start /* r0 = BOF */
-    ADD r0, r1, #haltMess
-    ADD lr, r1, #HALT_LOOP
-    B tprint
+    SWI BIOS_SRV_HALT
 
 .global PANIC
-
 PANIC:
-PANIC_start:
-    MOV r1, pc
-    SUB r1, r1, #8  /* r0 = PANIC */
-    SUB r1, r1, #PANIC_start /* r0 = BOF */
-    ADD r0, r1, #panicMess
-    ADD lr, r1, #HALT_LOOP
-    B tprint
+    SWI BIOS_SRV_PANIC
 
-HALT_LOOP:
-    B HALT_LOOP
+/* void LDST(void *addr) */
+.global LDST
+LDST:
+    SWI BIOS_SRV_LDST
+    BX lr   /* probably useless... */
 
-haltMess:
-    .asciz "SYSTEM HALTED.\0"
+/* void STST(void *addr) */
+.global STST
+STST:
+    STMIA r0, {r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, r13, r14, r15}
 
-panicMess:
-    .asciz "KERNEL PANIC!\0"
+    push {r5, r6, r7, r8}
+
+    ADD r5, r0, #PSR_OFFSET
+    MRS r6, CPSR
+    STR r6, [r5], #4
+
+    MRC p15, #0, r6, c1, c0, #0	    /* CP15_Control */
+    MRC p15, #0, r7, c2, c0	    /* CP15_EntryHi */
+    MRC p15, #0, r8, c15, c0	    /* CP15_CAUSE */
+
+    STMIA r5, {r6, r7, r8}
+
+    MOV r6, #TOD_HI_INFO
+    LDR r7, [r6]
+    MOV r6, #TOD_LO_INFO
+    LDR r8, [r6]
+
+    STMIA r5, {r7, r8}
+
+    pop {r5, r6, r7, r8}
+
+    Bx lr
+
+/* void WAIT() */
+.global WAIT
+WAIT:
+    CDP p15, 0xF, c0, c0, c1, 1
 
 
-/* Loads a processor state from given address *
- * unsigned int LDST(void *addr);             */
+/* unsigned int getSTATUS() */
+.global getSTATUS
+getSTATUS:
+    MRS r0, CPSR
+    Bx lr
 
-/*LDST:*/
+/* unsigned int getCAUSE() */
+.global getCAUSE
+getCAUSE:
+    MRC p15, #0, r0, c15, c0
+    Bx lr
+
+/* unsigned int getCONTROL() */
+.global getCONTROL
+getCONTROL:
+    MRC p15, #0, r0, c1, c0, #0
+    Bx lr
+
+/* unsigned int getTIMER() */
+.global getTIMER
+getTIMER:
+    push {r5}
+    MOV r5, #TIMER_INFO
+    LDR r0, [r5]
+    pop {r5}
+    Bx lr
+
+/* unsigned int getTODHI() */
+.global getTODHI
+getTODHI:
+    push {r5}
+    MOV r5, #TOD_HI_INFO
+    LDR r0, [r5]
+    pop {r5}
+    Bx lr
+
+/* unsigned int getTODLO() */
+.global getTODLO
+getTODLO:
+    push {r5}
+    MOV r5, #TOD_LO_INFO
+    LDR r0, [r5]
+    pop {r5}
+    Bx lr
+
+/* unsigned int setSTATUS(unsigned int status) */
+.global setSTATUS
+setSTATUS:
+    MSR CPSR, r0
+    Bx lr
+
+/* unsigned int setCAUSE(unsigned int cause) */
+.global setCAUSE
+setCAUSE:
+    MCR p15, #0, r0, c15, c0
+    Bx lr
+
+/* unsigned int setCONTROL(unsigned int cause) */
+.global setCONTROL
+setCONTROL:
+    MCR p15, #0, r0, c1, c0, #0
+    Bx lr
+
+/* unsigned int setTIMER(unsigned int timer) */
+.global setTIMER
+setTIMER:
+    push {r5}
+    MOV r5, #TIMER_INFO
+    STR r0, [r5]
+    pop {r5}
+    Bx lr
+
