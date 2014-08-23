@@ -13,7 +13,8 @@
 //nucleus variables
 pcb_t *readyQueue, *currentProcess;
 int processCount,softBlockCount;
-
+//semafori
+int semTape0,semDisk0,semNetwork0,semPrinter0,semTerminalRead0,semTerminalWrite0;
 void interruptHandler(){}
 void TLBHandler(){}
 void PGMTHandler(){}
@@ -66,12 +67,22 @@ int main(void)
 	//inizializzazione delle strutture del livello 2
 	initPcbs();
 	initASL();
+	
 	//inizialize nucleus mantained variables process count soft block count ready queue current process
 	processCount=0;
 	softBlockCount=0;
 	readyQueue=NULL;
 	currentProcess=NULL;
 	
-	
+	//initialize all nucleus mantained semaphores, possono esserci piu tape,disk,printer e terminal.
+	//puo essere da espandere
+	//vanno tutti inizializzati a 0 da indicazioni del pdf
+	semTape0=0;
+	semDisk0=0;
+	semNetwork0=0;
+	semPrinter0=0;
+	//send e recieve su un terminale sono concorrenti
+	semTerminalRead0=0;
+	semTerminalWrite0=0;
 	return 0;
 }
