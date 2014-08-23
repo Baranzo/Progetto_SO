@@ -5,9 +5,10 @@
 #include "asl.h"
 #include "const.h"
 #include "libuarm.h"
+#include "uARMconst.h"
 
 #define RAMTOP 0x2D4
-#define STATUS_CLEAR_M_I_F_BITS 0xFFFFFF20 
+
 
 //nucleus variables
 pcb_t *readyQueue, *currentProcess;
@@ -26,8 +27,9 @@ int main(void)
 	//credo che sia il new da settare ma non sono sicura
 	//interrupt new
 	tmp=(state_t*)0x7080;
-	
+	//pc
 	tmp[15*size]=&interruptHandler;
+	//sp
 	tmp[13*size]=(void*)RAMTOP;
 	
 	//TLB new
@@ -49,15 +51,17 @@ int main(void)
 	tmp[13*size]=(void*)RAMTOP;
 	
 	//status register inizialization
-	unsigned int status,value;
+	unsigned int status;
 	status=getSTATUS();
-	//metto a zero i irq fiq e status bits
-	status &= STATUS_CLEAR_M_I_F_BITS;
-	//ora li setto al valore desiderato
-	value=0xDF;
-	//fast interrupt e interrupt settati a 1 cosi sono disabilitati, credo
-	//i 5 bit meno significativi sono impostati a 0x1F  ovvero system/kernel mode
-	status|=value;
+	//disabilito interrupt
+	STATUS_DISABLE_INT(status);
+	//disabilito gli interrupt del timer (fast interrupt)
+	STATUS_DISABLE_TIMER(status);	
+	//pulisco i bit dello stato del processore
+	status &= STATUS_CLEAR_MODE;
+	//setto i bit a sys ovvero kernel mode
+	status |= STATUS_SYS_MODE;
+	//riscrivo sul registro
 	setSTATUS(status);
 	//inizializzazione delle strutture del livello 2
 	initPcbs();
