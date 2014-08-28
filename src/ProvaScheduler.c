@@ -3,11 +3,11 @@
 #include "const.h"
 #include "libuarm.h"
 //inizializzate dal nucleus inizialization in realta
-pcb_t *readyQueue=NULL, *currentProcess=NULL;
+pcb_t *currentProcess=NULL;
 int processCount=1,softBlockCount=1;
 
-//control == 1 finito il time slice == 0 il processo ha finito
-
+//control == 1 finito il time slice == 0 il processo ha finito ci sara un registro dove leggerlo lo scopriro un giorno
+//control ==9
 void scheduler(int control)
 {
 	if (readyQueue == NULL)
@@ -47,6 +47,9 @@ void scheduler(int control)
 		//in caso di inputoutput 
 		//sviluppare dopo aver fatto le syscall per questo interrupt.
 		//ricorda di aggiornare il softblockcount
+	}
+	if (control == 9){
+		currentProcess=removeProcQ(&readyQueue);
 	}
 	//modifico lo stato del processore con quello del nuovo processo caricato
 	LDST(&(currentProcess->p_s)); 

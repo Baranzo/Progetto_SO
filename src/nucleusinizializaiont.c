@@ -6,7 +6,8 @@
 #include "const.h"
 #include "libuarm.h"
 #include "uARMconst.h"
-
+#include "arch.h"
+//usero RAM_TOP definito da arch.h 
 #define RAMTOP 0x2D4
 
 
@@ -22,8 +23,10 @@ void syscallHandler(){}
 
 int main(void)
 {
-	state_t *tmp;
+	state_t *tmp,proc;
+	pcb_t *process0;
 	int size;
+	unsigned int status,process_status;
 	size=sizeof(unsigned int);
 	//credo che sia il new da settare ma non sono sicura
 	//interrupt new
@@ -31,33 +34,30 @@ int main(void)
 	//pc
 	tmp[15*size]=&interruptHandler;
 	//sp
-	tmp[13*size]=(void*)RAMTOP;
+	tmp[13*size]=(void*)RAM_TOP;
 	
 	//TLB new
 	tmp=(state_t*)0x7180;
 	
 	tmp[15*size]=&TLBHandler;
-	tmp[13*size]=(void*)RAMTOP;
+	tmp[13*size]=(void*)RAM_TOP;
 	
 	//PGMT new
 	tmp=(state_t*)0x7280;
 	
 	tmp[15*size]=&PGMTHandler;
-	tmp[13*size]=(void*)RAMTOP;
+	tmp[13*size]=(void*)RAM_TOP;
 	
 	//syscall new
 	tmp=(state_t*)0x7380;
 	
 	tmp[15*size]=&syscallHandler;
-	tmp[13*size]=(void*)RAMTOP;
+	tmp[13*size]=(void*)RAM_TOP;
 	
 	//status register inizialization
-	unsigned int status;
 	status=getSTATUS();
-	//disabilito interrupt
-	STATUS_DISABLE_INT(status);
-	//disabilito gli interrupt del timer (fast interrupt)
-	STATUS_DISABLE_TIMER(status);	
+	//disabilito tutti gli interrupt
+	STATUS_ALL_INT_DISABLE(status);	
 	//pulisco i bit dello stato del processore
 	status &= STATUS_CLEAR_MODE;
 	//setto i bit a sys ovvero kernel mode
@@ -84,5 +84,28 @@ int main(void)
 	//send e recieve su un terminale sono concorrenti
 	semTerminalRead0=0;
 	semTerminalWrite0=0;
+	
+	//istanzio il primo processo
+	process0=allocPcb();
+	process_status=(int)process0->p_s;
+	
+	STATUS_ALL_INT_ENABLE(process_status);
+	STATUS_ENABLE_TIMER(process_status);
+	
+	//virtual memory e sempre disabilitata perche non ancora completamente implementata
+	STATUS_ENABLE_TIMER(process_status);
+	
+	//kernel mode
+	//pulisco i bit dello stato del processore
+	process_status &= STATUS_CLEAR_MODE;
+	//setto i bit a sys ovvero kernel mode
+	process_status |= STATUS_SYS_MODE;
+	
+	//sp
+	STST(&proc);
+	tmp=&proc;
+	tmp[13*size]=(void*)(RAM_TOP-FRAMESIZE);
+	LDST(&proc);
+	
 	return 0;
 }
