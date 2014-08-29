@@ -12,12 +12,12 @@ void create_process(state_t* proc_state)
 {	
 	
 	pcb_t *new_proc,*parent;
-	state_t parent_state;
+	state_t *parent_state;
 	parent=currentProcess;
 	parent_state=parent->p_s;
 	new_proc=allocPcb();
 	if (new_proc==NULL){
-			(int*)*parent_state[4*size]=-1;
+			parent_state[4*size]=(void *)(-1);
 			return;
 		}
 }
