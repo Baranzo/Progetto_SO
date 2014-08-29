@@ -3,7 +3,7 @@
 #include "const.h"
 #include "libuarm.h"
 //inizializzate dal nucleus inizialization in realta
-pcb_t *currentProcess=NULL;
+
 int processCount=1,softBlockCount=1;
 
 //control == 1 finito il time slice == 0 il processo ha finito ci sara un registro dove leggerlo lo scopriro un giorno

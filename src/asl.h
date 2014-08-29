@@ -24,5 +24,5 @@ EXTERN int insertBlocked(int *semAdd, pcb_t *p);
 EXTERN pcb_t *removeBlocked(int *semAdd);
 EXTERN pcb_t *outBlocked(pcb_t *p);
 EXTERN pcb_t *headBlocked(int *semAdd);
-
+EXTERN void initASL();
 #endif

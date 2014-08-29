@@ -4,6 +4,6 @@
 #include "types.h"
 #include "const.h"
 
-EXTERN void syscallHandler(void);
+EXTERN void syscallHandler();
 
 #endif

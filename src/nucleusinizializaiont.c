@@ -18,10 +18,10 @@ pcb_t *readyQueue, *currentProcess;
 int processCount,softBlockCount;
 //semafori
 int semTape0,semDisk0,semNetwork0,semPrinter0,semTerminalRead0,semTerminalWrite0;
-
+void interruptHandler(){}
 void TLBHandler(){}
 void PGMTHandler(){}
-void syscallHandler(){}
+
 
 int main(void)
 {
@@ -32,26 +32,26 @@ int main(void)
 	size=sizeof(unsigned int);
 	//credo che sia il new da settare ma non sono sicura
 	//interrupt new
-	tmp=(state_t*)0x7080;
+	tmp=(state_t*)INT_NEWAREA;
 	//pc
 	tmp[15*size]=&interruptHandler;
 	//sp
 	tmp[13*size]=(void*)RAM_TOP;
 	
 	//TLB new
-	tmp=(state_t*)0x7180;
+	tmp=(state_t*)TLB_NEWAREA;
 	
 	tmp[15*size]=&TLBHandler;
 	tmp[13*size]=(void*)RAM_TOP;
 	
 	//PGMT new
-	tmp=(state_t*)0x7280;
+	tmp=(state_t*)PGMTRAP_NEWAREA;
 	
 	tmp[15*size]=&PGMTHandler;
 	tmp[13*size]=(void*)RAM_TOP;
 	
 	//syscall new
-	tmp=(state_t*)0x7380;
+	tmp=(state_t*)SYSBK_NEWAREA;
 	
 	tmp[15*size]=&syscallHandler;
 	tmp[13*size]=(void*)RAM_TOP;
