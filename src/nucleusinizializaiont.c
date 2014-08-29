@@ -7,16 +7,18 @@
 #include "libuarm.h"
 #include "uARMconst.h"
 #include "arch.h"
+#include "scheduler.h"
+#include "syscall.h"
 //usero RAM_TOP definito da arch.h 
 #define RAMTOP 0x2D4
 
-
+EXTERN void test();
 //nucleus variables
 pcb_t *readyQueue, *currentProcess;
 int processCount,softBlockCount;
 //semafori
 int semTape0,semDisk0,semNetwork0,semPrinter0,semTerminalRead0,semTerminalWrite0;
-void interruptHandler(){}
+
 void TLBHandler(){}
 void PGMTHandler(){}
 void syscallHandler(){}
@@ -101,11 +103,22 @@ int main(void)
 	//setto i bit a sys ovvero kernel mode
 	process_status |= STATUS_SYS_MODE;
 	
+	process0->p_s=(state_t)process_status;
 	//sp
 	STST(&proc);
 	tmp=&proc;
 	tmp[13*size]=(void*)(RAM_TOP-FRAMESIZE);
+	//metto PC all indirizzo della funzione test()
+	tmp[15*size]=&test;
 	LDST(&proc);
+	
+	
+	//metto il processo in ready queue
+	readyQueue=mkEmptyProcQ();
+	insertProcQ(&readyQueue, process0);
+	
+	scheduler(1);
+	
 	
 	return 0;
 }
