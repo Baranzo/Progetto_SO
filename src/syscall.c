@@ -90,27 +90,37 @@ void terminateProcess()
 	}
 }
 
+void verhogen(state_t *semaphore)
+{
+	
+	(*semaphore)++;
+}
+
 void syscallHandler(int sistype)
 {
 
-	state_t *tmp, *proc_state;
+	state_t *tmp, *a1;
 
 	unsigned int sys;
 	tmp=(state_t *)SYSBK_OLDAREA;
 	
 	sys=(int)tmp[0];
+	a1=tmp[1*size];
 	switch (sys)
 	{
-		case 1:
+		case CREATEPROCESS:
 		{
-			//unsigned int proc_state;
-			proc_state=tmp[1*size];
-			createProcess(proc_state);
+			createProcess(a1);
 			break;
 		}
-		case 2:
+		case TERMINATEPROCESS:
 		{
 			terminateProcess();
+			break;
+		}
+		case VERHOGEN:
+		{
+			verhogen(a1);
 			break;
 		}
 	}
