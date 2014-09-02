@@ -95,6 +95,13 @@ void verhogen(state_t *semaphore)
 	
 	(*semaphore)++;
 }
+void passeren(state_t *semaphore)
+{
+	while ((*semaphore)<=0){
+		;
+	}
+	(*semaphore)--;
+}
 
 void syscallHandler(int sistype)
 {
@@ -121,6 +128,12 @@ void syscallHandler(int sistype)
 		case VERHOGEN:
 		{
 			verhogen(a1);
+			break;
+		}
+		
+		case PASSEREN:
+		{
+			passeren(a1);
 			break;
 		}
 	}
