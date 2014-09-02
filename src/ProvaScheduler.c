@@ -2,9 +2,13 @@
 #include "asl.h"
 #include "const.h"
 #include "libuarm.h"
+#include "scheduler.h"
 //inizializzate dal nucleus inizialization in realta
 
-int processCount=1,softBlockCount=1;
+void error(char *strp) {
+	tprint(strp);
+	PANIC();
+}
 
 //control == 1 finito il time slice == 0 il processo ha finito ci sara un registro dove leggerlo lo scopriro un giorno
 //control ==9
@@ -13,7 +17,7 @@ void scheduler(int control)
 	if (readyQueue == NULL)
 	{
 		if (processCount == 0) HALT();
-		if ((processCount >0) && (softBlockCount == 0)) PANIC();
+		if ((processCount >0) && (softBlockCount == 0)) error("Deadlock");
 		if ((processCount >0) && (softBlockCount > 0)) WAIT();
 	}
 	/*se tutto va bene faccio andare il prossimo processo.

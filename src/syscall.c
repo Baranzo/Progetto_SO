@@ -7,8 +7,11 @@
 #include "scheduler.h"
 
 unsigned int size=sizeof(unsigned int);
-
-void create_process(state_t* proc_state)
+void error(char *strp) {
+	tprint(strp);
+	PANIC();
+}
+void createProcess(state_t* proc_state)
 {	
 	
 	pcb_t *new_proc,*parent;
@@ -29,11 +32,67 @@ void create_process(state_t* proc_state)
 	insertProcQ(&readyQueue,new_proc);
 	//in caso di successo metto in v0 0
 	parent_state[4*size]=(void *)(0);
+	processCount++;
 	return;
 }
+
+
+/* 
+ * WARNING this function has to be called only by terminateProcess;
+ * input: a process to eliminate
+ * output: it's sibling or null if onlychild
+ * this function does not kill all the child of the process
+ */
+
+pcb_t *terminateSingleProcess(pcb_t *process)
+{		
+		pcb_t *sib; 
+		sib=process->p_sib;
+		//makes the process no longer the child of it's parent
+		outChild(process);
+		//tolgo il processo dalla ready queue
+		if(outProcQ(&readyQueue,process)==NULL){
+			error("processo non trovato nella readyqueue");
+		}
+		//aggiorno la lista dei pcb liveri e il process count
+		freePcb(process);
+		processCount--;
+		
+		return sib;	
 	
+}
+/*
+ * kills a process and all of its child recursively
+ */
+void terminateProcess()
+{
+	pcb_t *process;
+	process=currentProcess;
+	//se ho  dei figli chiamo ricorsivamente questa funzione
+	if(emptyChild(process)==FALSE)
+	{
+		terminateProcess(process->p_child);
+	}
+	//non ho figli
+	if (process!=currentProcess)
+	{
+		//non sono il processo sul quale e stata fatta la richiesta di kill ma un suo figlio
+		while(process!=NULL)
+		{
+			//uccido tutti i figli
+			//nb terminatesingleprocess mi restituisce il fratello del processo ucciso o null
+			process=terminateSingleProcess(process);
+		}
+	}else
+	{	
+		//termino currentProcess
+		terminateSingleProcess(process);
+	}
+}
+
 void syscallHandler(int sistype)
 {
+
 	state_t *tmp, *proc_state;
 
 	unsigned int sys;
@@ -46,7 +105,12 @@ void syscallHandler(int sistype)
 		{
 			//unsigned int proc_state;
 			proc_state=tmp[1*size];
-			create_process(proc_state);
+			createProcess(proc_state);
+			break;
+		}
+		case 2:
+		{
+			terminateProcess();
 			break;
 		}
 	}
